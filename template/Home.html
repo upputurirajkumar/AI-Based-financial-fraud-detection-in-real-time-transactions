@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+{% block main %}
+<style>
+    h1{
+        color: aliceblue;
+        display: flex;
+        justify-content: center;
+        text-align: center;
+    }
+    img{
+        height: 300px;
+        width: 1000px;
+    }
+</style>
+<div>
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+    <h1>A Suspicious Financial Transaction Detection Model Using Autoencoder and Risk-Based Approach</h1>
+    <img src="static/lithiumironbattery.jpeg"/>
+</div>
+{% endblock %}
