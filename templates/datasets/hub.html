@@ -1,0 +1,141 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Datasets &amp; Data Quality - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}Datasets{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        <h1>Dataset Management &amp; Data Quality Auditing</h1>
+        <p>Ingested financial transaction batches, automated schema inspection, and outlier telemetry.</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-primary" onclick="openModal('uploadModal')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Ingest New Dataset
+        </button>
+    </div>
+</div>
+
+<!-- Uploaded Datasets Table -->
+<div class="panel" style="margin-bottom: 24px;">
+    <div class="panel-header">
+        <span class="panel-title">Ingested Datasets History</span>
+        <div class="metadata-inline">
+            <span>{{ datasets|length }} Total Uploads</span>
+        </div>
+    </div>
+    <div class="panel-body no-padding">
+        {% if datasets %}
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Uploaded By</th>
+                        <th>Uploaded At</th>
+                        <th>Total Records</th>
+                        <th>Processed Records</th>
+                        <th>Failed Records</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in datasets %}
+                    <tr>
+                        <td style="font-weight: 600; font-family: var(--font-mono); color: var(--accent-teal);">
+                            {{ d.filename }}
+                        </td>
+                        <td>{{ d.uploaded_by.username }}</td>
+                        <td class="metadata-inline" style="font-size: 11px;">{{ d.created_at|date:"Y-m-d H:i" }}</td>
+                        <td class="tabular-nums font-mono">{{ d.total_records }}</td>
+                        <td class="tabular-nums font-mono" style="color: var(--risk-low);">{{ d.processed_records }}</td>
+                        <td class="tabular-nums font-mono" style="color: {% if d.failed_records > 0 %}var(--risk-critical){% else %}var(--text-muted){% endif %};">
+                            {{ d.failed_records }}
+                        </td>
+                        <td>
+                            {% if d.is_processed %}
+                            <span class="risk-tag low">PROCESSED</span>
+                            {% else %}
+                            <span class="status-badge">PENDING</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-title">No Datasets Ingested Yet</div>
+            <div class="empty-state-desc">Upload a PaySim transaction dataset to perform automated data quality audits.</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('uploadModal')">Upload First Dataset</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Benchmark Data Quality Report -->
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">Standard Benchmark Data Quality Report (PaySim 10K Reference)</span>
+        <div class="metadata-inline">
+            <span>Automated Inspection</span>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+            <div style="padding: 14px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Missing Values</div>
+                <div style="font-size: 22px; font-weight: 700; color: var(--risk-low); font-family: var(--font-mono);">0.0%</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">0 missing across 11 fields</div>
+            </div>
+            <div style="padding: 14px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Duplicate Records</div>
+                <div style="font-size: 22px; font-weight: 700; color: var(--risk-low); font-family: var(--font-mono);">0</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Zero duplicate rows found</div>
+            </div>
+            <div style="padding: 14px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Class Imbalance</div>
+                <div style="font-size: 22px; font-weight: 700; color: var(--risk-high); font-family: var(--font-mono);">39 : 1</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">2.50% fraud positive rate</div>
+            </div>
+            <div style="padding: 14px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Invalid Financials</div>
+                <div style="font-size: 22px; font-weight: 700; color: var(--risk-low); font-family: var(--font-mono);">0</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">All balances &ge; $0.00</div>
+            </div>
+        </div>
+
+        <div style="padding: 12px 16px; background-color: rgba(255, 255, 255, 0.02); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 12px; color: var(--text-secondary);">
+            <strong>Anti-Leakage Quality Rule:</strong> The heuristic banking core field <code>isFlaggedFraud</code> is isolated from training features to avoid direct target leakage. Account identifiers (<code>nameOrig</code>, <code>nameDest</code>) are excluded from direct regression.
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Ingest Dataset -->
+<div id="uploadModal" class="modal-backdrop">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span class="modal-title">Ingest Transaction Dataset</span>
+            <button type="button" class="modal-close" onclick="closeModal('uploadModal')">&times;</button>
+        </div>
+        <form method="POST" action="{% url 'datasets_hub' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Transaction Dataset (CSV)</label>
+                    <input type="file" name="file" accept=".csv" class="form-input" required>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                        Upload PaySim or standard banking transaction CSV to run automated schema checks.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Upload &amp; Audit Quality</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

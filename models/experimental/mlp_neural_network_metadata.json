@@ -1,0 +1,47 @@
+{
+  "model_name": "Multi-Layer Perceptron (DNN)",
+  "model_version": "1.0.0",
+  "status": "EXPERIMENTAL",
+  "artifact_file": "mlp_neural_network_pipeline_v1.joblib",
+  "decision_threshold": 0.4499999999999999,
+  "validation_metrics": {
+    "threshold": 0.45,
+    "precision": 1.0,
+    "recall": 0.9211,
+    "f1_score": 0.9589,
+    "roc_auc": 0.9999,
+    "pr_auc": 0.9947,
+    "brier_score": 0.0021,
+    "confusion_matrix": {
+      "true_positives": 35,
+      "false_positives": 0,
+      "true_negatives": 1462,
+      "false_negatives": 3
+    },
+    "support": {
+      "total": 1500,
+      "fraud_count": 38,
+      "legit_count": 1462
+    }
+  },
+  "test_metrics": {
+    "threshold": 0.45,
+    "precision": 1.0,
+    "recall": 0.8378,
+    "f1_score": 0.9118,
+    "roc_auc": 0.9995,
+    "pr_auc": 0.9825,
+    "brier_score": 0.0037,
+    "confusion_matrix": {
+      "true_positives": 31,
+      "false_positives": 0,
+      "true_negatives": 1463,
+      "false_negatives": 6
+    },
+    "support": {
+      "total": 1500,
+      "fraud_count": 37,
+      "legit_count": 1463
+    }
+  }
+}

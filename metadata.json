@@ -1,0 +1,6 @@
+{
+  "name": "AI-Based Financial Fraud Detection in Real-Time Transactions",
+  "description": "Financial fraud detection system utilizing deep learning, autoencoders, and random forest classification for real-time transaction security.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

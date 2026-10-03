@@ -1,0 +1,554 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Live Transaction Monitoring - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}Live Stream{% endblock %}
+
+{% block content %}
+<!-- DEMONSTRATION MODE NOTICE BANNER (Strict Safety Requirement) -->
+<div class="panel" style="background: rgba(20, 184, 166, 0.06); border-left: 3px solid var(--accent-teal); margin-bottom: 20px; padding: 12px 18px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="risk-tag low" style="font-size: 11px; letter-spacing: 0.05em;">SYNTHETIC DATA &middot; DEMONSTRATION MODE</span>
+            <span style="font-size: 12px; color: var(--text-secondary);">
+                All stream events are synthetically generated for AI risk engine validation. No real financial accounts or customer funds are accessed.
+            </span>
+        </div>
+        <div class="metadata-inline" style="font-size: 11px;">
+            <span>Environment: <strong style="color: var(--text-primary);">{{ status.environment }}</strong></span>
+            <span class="metadata-separator" aria-hidden="true">&middot;</span>
+            <span>Engine: <strong style="color: var(--accent-teal);">RFC v1.0.0 (&tau;=0.23)</strong></span>
+        </div>
+    </div>
+</div>
+
+<!-- Header & Stream Controls -->
+<div class="page-header" style="margin-bottom: 16px;">
+    <div class="page-title-group">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <h1>Live Transaction Monitoring</h1>
+            <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-sm); background: rgba(56, 189, 248, 0.1); color: var(--accent-teal); border: 1px solid rgba(56, 189, 248, 0.25);">
+                LIVE MONITORING &mdash; SYNTHETIC DEMO STREAM
+            </span>
+            <!-- Dynamic Status Badge -->
+            <span id="stream-status-pill" class="risk-tag {% if status.status == 'RUNNING' %}low{% elif status.status == 'PAUSED' %}medium{% else %}high{% endif %}" style="font-size: 12px; padding: 3px 8px;">
+                <span id="stream-status-dot" class="status-dot" style="width: 7px; height: 7px; background-color: {% if status.status == 'RUNNING' %}var(--risk-low){% elif status.status == 'PAUSED' %}var(--risk-medium){% else %}var(--text-muted){% endif %};"></span>
+                <span id="stream-status-text">STREAM {{ status.status }}</span>
+            </span>
+        </div>
+        <p>Continuous synthetic transaction generation, sub-10ms model inference, and real-time fraud alert propagation.</p>
+    </div>
+
+
+    <!-- Interactive Stream Controls -->
+    <div class="page-actions" style="background-color: var(--bg-surface); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <!-- Scenario Picker -->
+        <select id="scenario-select" class="form-select" style="width: auto; padding: 6px 10px; font-size: 12px;" aria-label="Select test scenario">
+            <option value="NORMAL" {% if status.scenario == 'NORMAL' %}selected{% endif %}>Scenario: NORMAL (Benign Retail)</option>
+            <option value="HIGH_RISK_PATTERN" {% if status.scenario == 'HIGH_RISK_PATTERN' %}selected{% endif %}>Scenario: HIGH_RISK_PATTERN (Drained Wire)</option>
+            <option value="HIGH_AMOUNT" {% if status.scenario == 'HIGH_AMOUNT' %}selected{% endif %}>Scenario: HIGH_AMOUNT (Treasury Outflow)</option>
+            <option value="ANOMALOUS" {% if status.scenario == 'ANOMALOUS' %}selected{% endif %}>Scenario: ANOMALOUS (Balance Mismatch)</option>
+            <option value="RAPID_SEQUENCE" {% if status.scenario == 'RAPID_SEQUENCE' %}selected{% endif %}>Scenario: RAPID_SEQUENCE (Burst)</option>
+            <option value="MIXED_STREAM" {% if status.scenario == 'MIXED_STREAM' %}selected{% endif %}>Scenario: MIXED_STREAM (Weighted Feed)</option>
+        </select>
+
+        <!-- Rate Picker -->
+        <select id="rate-select" class="form-select" style="width: auto; padding: 6px 10px; font-size: 12px;" aria-label="Select generation speed">
+            <option value="12" {% if status.rate_per_minute == 12 %}selected{% endif %}>12 events/min (5s)</option>
+            <option value="20" {% if status.rate_per_minute == 20 %}selected{% endif %}>20 events/min (3s)</option>
+            <option value="30" {% if status.rate_per_minute == 30 %}selected{% endif %}>30 events/min (2s)</option>
+            <option value="60" {% if status.rate_per_minute == 60 %}selected{% endif %}>60 events/min (1s)</option>
+        </select>
+
+        <!-- Control Action Buttons -->
+        <button id="btn-start" type="button" class="btn btn-primary btn-sm" onclick="startStream()" {% if status.status == 'RUNNING' %}style="display:none;"{% endif %}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Start Stream
+        </button>
+
+        <button id="btn-pause" type="button" class="btn btn-secondary btn-sm" onclick="pauseStream()" {% if status.status != 'RUNNING' %}style="display:none;"{% endif %}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            Pause
+        </button>
+
+        <button id="btn-resume" type="button" class="btn btn-primary btn-sm" onclick="resumeStream()" {% if status.status != 'PAUSED' %}style="display:none;"{% endif %}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Resume
+        </button>
+
+        <button id="btn-stop" type="button" class="btn btn-secondary btn-sm" onclick="stopStream()" {% if status.status == 'STOPPED' %}disabled{% endif %}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16"/></svg>
+            Stop
+        </button>
+
+        <button id="btn-step" type="button" class="btn btn-secondary btn-sm" onclick="executeStep()" title="Generate exactly 1 synthetic transaction on-demand">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            Step (1 Event)
+        </button>
+    </div>
+</div>
+
+<!-- Real-Time Metrics Cards Grid -->
+<div class="kpi-grid" style="grid-template-columns: repeat(6, 1fr); margin-bottom: 20px;">
+    <div class="kpi-card">
+        <div class="kpi-label">Stream Processed</div>
+        <div id="metric-processed" class="kpi-value tabular-nums">{{ status.processed_count|default:"0" }}</div>
+        <div class="kpi-subtext">Max Session: {{ status.max_events }}</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-label">Configured Rate</div>
+        <div id="metric-rate" class="kpi-value tabular-nums">{{ status.rate_per_minute }}</div>
+        <div class="kpi-subtext">Events per minute</div>
+    </div>
+
+    <div class="kpi-card critical">
+        <div class="kpi-label">Alerts Triggered</div>
+        <div id="metric-alerts" class="kpi-value tabular-nums">{{ status.alerts_count|default:"0" }}</div>
+        <div class="kpi-subtext">Deduplicated Rules</div>
+    </div>
+
+    <div class="kpi-card warning">
+        <div class="kpi-label">High &amp; Critical Risk</div>
+        <div id="metric-high-risk" class="kpi-value tabular-nums">{{ status.high_risk_count|default:"0" }}</div>
+        <div class="kpi-subtext">Model Flagged</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-label">Avg Processing Latency</div>
+        <div id="metric-latency" class="kpi-value tabular-nums">{{ status.average_latency_ms|default:"0.0" }}<span style="font-size: 13px; color: var(--text-muted);">ms</span></div>
+        <div class="kpi-subtext">Inference + Persistence</div>
+    </div>
+
+    <div class="kpi-card success">
+        <div class="kpi-label">Pipeline Reliability</div>
+        <div id="metric-reliability" class="kpi-value tabular-nums">100.0%</div>
+        <div id="metric-failures" class="kpi-subtext">0 Processing Failures</div>
+    </div>
+</div>
+
+<!-- Operational Split: Live Transaction Feed & Intelligence Column -->
+<div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px;">
+    <!-- Left Column: Live Transaction Stream Table -->
+    <div class="panel" style="margin-bottom: 0;">
+        <div class="panel-header">
+            <span class="panel-title">
+                <span class="status-dot" style="display: inline-block; width: 6px; height: 6px; margin-right: 6px; background-color: var(--accent-teal);"></span>
+                Live Transaction Stream (Bounded Buffer: 50 Events)
+            </span>
+            <div class="metadata-inline">
+                <span id="buffer-count">Showing 0 recent events</span>
+            </div>
+        </div>
+        <div class="panel-body no-padding">
+            <div class="data-table-wrapper" style="max-height: 520px; overflow-y: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Scenario</th>
+                            <th>Type</th>
+                            <th style="text-align: right;">Amount</th>
+                            <th>Decision State</th>
+                            <th>Risk Score</th>
+                            <th>Probability</th>
+                            <th>Latency</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="live-transactions-tbody">
+                        {% for t in recent_synthetic_transactions %}
+                        {% with latest=t.predictions.first %}
+                        <tr id="row-{{ t.transaction_id }}">
+                            <td>
+                                <a href="{% url 'transaction_detail' tx_id=t.transaction_id %}" style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-teal);">
+                                    {{ t.transaction_id }}
+                                </a>
+                                <div class="metadata-inline" style="font-size: 10px; margin-top: 2px;">
+                                    <span>SYNTHETIC</span>
+                                    <span class="metadata-separator">&middot;</span>
+                                    <span>{{ t.name_orig }} &rarr; {{ t.name_dest }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge" style="font-size: 10px;">{{ t.scenario_tag|default:"NORMAL" }}</span>
+                            </td>
+                            <td>
+                                <span class="status-badge">{{ t.transaction_type }}</span>
+                            </td>
+                            <td class="tabular-nums" style="text-align: right; font-weight: 600;">
+                                ${{ t.amount|floatformat:2 }}
+                            </td>
+                            <td>
+                                {% if latest %}
+                                <span class="risk-tag {% if latest.decision_state == 'FRAUD' %}critical{% elif latest.decision_state == 'SUSPICIOUS' %}high{% else %}low{% endif %}">
+                                    {{ latest.decision_state }}
+                                </span>
+                                {% else %}
+                                <span class="status-badge">UNASSESSED</span>
+                                {% endif %}
+                            </td>
+                            <td class="tabular-nums font-mono">
+                                {% if latest %}{{ latest.risk_score|floatformat:1 }}/100{% else %}&mdash;{% endif %}
+                            </td>
+                            <td class="tabular-nums font-mono" style="font-size: 11px;">
+                                {% if latest and latest.fraud_probability != None %}{{ latest.fraud_probability|floatformat:4 }}{% else %}&mdash;{% endif %}
+                            </td>
+                            <td class="tabular-nums font-mono" style="font-size: 11px; color: var(--text-muted);">
+                                {{ t.latency_ms|default:"4.2" }}ms
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'transaction_detail' tx_id=t.transaction_id %}" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 11px;">Inspect</a>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% empty %}
+                        <tr id="empty-row">
+                            <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                Stream is ready. Click <strong>Start Stream</strong> or <strong>Step (1 Event)</strong> to begin simulated event processing.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Live Risk Distribution & Live Alerts -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Live Stream Risk Distribution Chart -->
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <span class="panel-title">Stream Risk Distribution</span>
+            </div>
+            <div class="panel-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="height: 180px; width: 180px; position: relative;">
+                    <canvas id="liveRiskDonutChart"></canvas>
+                </div>
+                <div class="metadata-inline" style="margin-top: 12px; font-size: 11px; flex-wrap: wrap; justify-content: center;">
+                    <span style="color: var(--risk-low);">Low: <span id="dist-low">{{ status.risk_distribution.LOW|default:0 }}</span></span>
+                    <span class="metadata-separator">&middot;</span>
+                    <span style="color: var(--risk-medium);">Med: <span id="dist-med">{{ status.risk_distribution.MEDIUM|default:0 }}</span></span>
+                    <span class="metadata-separator">&middot;</span>
+                    <span style="color: var(--risk-high);">High: <span id="dist-high">{{ status.risk_distribution.HIGH|default:0 }}</span></span>
+                    <span class="metadata-separator">&middot;</span>
+                    <span style="color: var(--risk-critical);">Crit: <span id="dist-crit">{{ status.risk_distribution.CRITICAL|default:0 }}</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Triggered Alerts Feed -->
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <span class="panel-title">Live Fraud Alerts (<span id="alerts-buffer-count">0</span>)</span>
+                <a href="{% url 'alerts_list' %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 6px;">Queue &rarr;</a>
+            </div>
+            <div class="panel-body no-padding">
+                <div id="live-alerts-container" style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px;">
+                    <div id="empty-alerts" style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">
+                        No stream alerts triggered yet.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let lastPollTimestamp = null;
+let pollTimer = null;
+let donutChart = null;
+
+// Initialize Donut Chart
+function initRiskDonut() {
+    const ctx = document.getElementById('liveRiskDonutChart').getContext('2d');
+    donutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low', 'Medium', 'High', 'Critical'],
+            datasets: [{
+                data: [
+                    parseInt(document.getElementById('dist-low').textContent) || 0,
+                    parseInt(document.getElementById('dist-med').textContent) || 0,
+                    parseInt(document.getElementById('dist-high').textContent) || 0,
+                    parseInt(document.getElementById('dist-crit').textContent) || 0
+                ],
+                backgroundColor: ['#10B981', '#F59E0B', '#F97316', '#EF4444'],
+                borderWidth: 1,
+                borderColor: '#0F172A'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            cutout: '74%'
+        }
+    });
+}
+
+// Update Donut Chart Numbers
+function updateRiskDonut(riskDist) {
+    if (!donutChart || !riskDist) return;
+    const low = riskDist.LOW || 0;
+    const med = riskDist.MEDIUM || 0;
+    const high = riskDist.HIGH || 0;
+    const crit = riskDist.CRITICAL || 0;
+
+    document.getElementById('dist-low').textContent = low;
+    document.getElementById('dist-med').textContent = med;
+    document.getElementById('dist-high').textContent = high;
+    document.getElementById('dist-crit').textContent = crit;
+
+    donutChart.data.datasets[0].data = [low, med, high, crit];
+    donutChart.update('none'); // non-blocking update
+}
+
+// UI State Synchronization
+function updateControlsUI(status) {
+    const state = status.status;
+    const pill = document.getElementById('stream-status-pill');
+    const dot = document.getElementById('stream-status-dot');
+    const text = document.getElementById('stream-status-text');
+
+    pill.className = `risk-tag ${state === 'RUNNING' ? 'low' : state === 'PAUSED' ? 'medium' : 'high'}`;
+    dot.style.backgroundColor = state === 'RUNNING' ? 'var(--risk-low)' : state === 'PAUSED' ? 'var(--risk-medium)' : 'var(--text-muted)';
+    text.textContent = `STREAM ${state}`;
+
+    document.getElementById('btn-start').style.display = (state === 'RUNNING') ? 'none' : 'inline-flex';
+    document.getElementById('btn-pause').style.display = (state === 'RUNNING') ? 'inline-flex' : 'none';
+    document.getElementById('btn-resume').style.display = (state === 'PAUSED') ? 'inline-flex' : 'none';
+    document.getElementById('btn-stop').disabled = (state === 'STOPPED');
+
+    // Update KPIs
+    if (status.processed_count !== undefined) document.getElementById('metric-processed').textContent = status.processed_count;
+    if (status.rate_per_minute !== undefined) document.getElementById('metric-rate').textContent = status.rate_per_minute;
+    if (status.alerts_count !== undefined) document.getElementById('metric-alerts').textContent = status.alerts_count;
+    if (status.high_risk_count !== undefined) document.getElementById('metric-high-risk').textContent = status.high_risk_count;
+    if (status.average_latency_ms !== undefined) document.getElementById('metric-latency').innerHTML = `${status.average_latency_ms}<span style="font-size: 13px; color: var(--text-muted);">ms</span>`;
+
+    if (status.failure_count !== undefined) {
+        document.getElementById('metric-failures').textContent = `${status.failure_count} Failures`;
+        const total = (status.processed_count || 0) + (status.failure_count || 0);
+        const rel = total > 0 ? (((status.processed_count || 0) / total) * 100).toFixed(1) : '100.0';
+        document.getElementById('metric-reliability').textContent = `${rel}%`;
+    }
+
+    if (status.risk_distribution) {
+        updateRiskDonut(status.risk_distribution);
+    }
+}
+
+// Append New Event Row to Table (Bounded Buffer)
+function appendEventRow(event) {
+    const emptyRow = document.getElementById('empty-row');
+    if (emptyRow) emptyRow.remove();
+
+    const tbody = document.getElementById('live-transactions-tbody');
+    const existingRow = document.getElementById(`row-${event.transaction_id}`);
+    if (existingRow) return; // Idempotent check
+
+    const tr = document.createElement('tr');
+    tr.id = `row-${event.transaction_id}`;
+    tr.style.backgroundColor = (event.decision_state === 'FRAUD' || event.risk_tier === 'CRITICAL') ? 'rgba(239, 68, 68, 0.08)' : '';
+
+    const riskClass = event.decision_state === 'FRAUD' ? 'critical' : event.decision_state === 'SUSPICIOUS' ? 'high' : 'low';
+    const amountFmt = typeof event.amount === 'number' ? event.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : event.amount;
+    const probFmt = typeof event.fraud_probability === 'number' ? event.fraud_probability.toFixed(4) : '&mdash;';
+    const scoreFmt = typeof event.risk_score === 'number' ? `${event.risk_score.toFixed(1)}/100` : '&mdash;';
+    const latFmt = typeof event.latency_ms === 'number' ? `${event.latency_ms.toFixed(1)}ms` : '4.2ms';
+
+    tr.innerHTML = `
+        <td>
+            <a href="/transactions/${encodeURIComponent(event.transaction_id)}/" style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-teal);">
+                ${event.transaction_id}
+            </a>
+            <div class="metadata-inline" style="font-size: 10px; margin-top: 2px;">
+                <span>${event.source || 'SYNTHETIC'}</span>
+                <span class="metadata-separator">&middot;</span>
+                <span>${event.name_orig || 'C00'} &rarr; ${event.name_dest || 'M00'}</span>
+            </div>
+        </td>
+        <td>
+            <span class="status-badge" style="font-size: 10px;">${event.scenario || 'NORMAL'}</span>
+        </td>
+        <td>
+            <span class="status-badge">${event.transaction_type || 'PAYMENT'}</span>
+        </td>
+        <td class="tabular-nums" style="text-align: right; font-weight: 600;">
+            $${amountFmt}
+        </td>
+        <td>
+            <span class="risk-tag ${riskClass}">
+                ${event.decision_state || 'LEGITIMATE'}
+            </span>
+        </td>
+        <td class="tabular-nums font-mono">
+            ${scoreFmt}
+        </td>
+        <td class="tabular-nums font-mono" style="font-size: 11px;">
+            ${probFmt}
+        </td>
+        <td class="tabular-nums font-mono" style="font-size: 11px; color: var(--text-muted);">
+            ${latFmt}
+        </td>
+        <td style="text-align: right;">
+            <a href="/transactions/${encodeURIComponent(event.transaction_id)}/" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 11px;">Inspect</a>
+        </td>
+    `;
+
+    tbody.insertBefore(tr, tbody.firstChild);
+
+    // Keep bounded buffer (max 50 rows in DOM)
+    while (tbody.children.length > 50) {
+        tbody.removeChild(tbody.lastChild);
+    }
+
+    document.getElementById('buffer-count').textContent = `Showing ${tbody.children.length} recent events`;
+}
+
+// Append Triggered Alert Card
+function appendAlertCard(alert) {
+    const emptyAlerts = document.getElementById('empty-alerts');
+    if (emptyAlerts) emptyAlerts.remove();
+
+    const container = document.getElementById('live-alerts-container');
+    const existingAlert = document.getElementById(`alert-${alert.alert_id}`);
+    if (existingAlert) return;
+
+    const div = document.createElement('div');
+    div.id = `alert-${alert.alert_id}`;
+    div.style.cssText = 'padding: 10px 12px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border-left: 3px solid var(--risk-critical); border: 1px solid var(--border-subtle); border-left-width: 3px; font-size: 12px;';
+
+    const scoreDisplay = alert.risk_score ? ` &middot; Score: ${parseFloat(alert.risk_score).toFixed(1)}/100` : '';
+    const probDisplay = alert.fraud_probability ? ` &middot; Prob: ${(parseFloat(alert.fraud_probability) * 100).toFixed(1)}%` : '';
+
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <span style="font-weight: 600; color: var(--text-primary); font-size: 12px;">${alert.title || 'Fraud Alert Triggered'}</span>
+            <span class="risk-tag critical" style="font-size: 10px;">${alert.severity || 'CRITICAL'}</span>
+        </div>
+        <div class="metadata-inline" style="font-size: 11px; margin-top: 4px;">
+            <a href="/transactions/${encodeURIComponent(alert.transaction_id)}/" style="color: var(--accent-teal); font-family: var(--font-mono); font-weight: 600;">
+                ${alert.transaction_id}
+            </a>
+            <span class="metadata-separator">&middot;</span>
+            <span style="color: var(--text-muted);">${alert.rule_name || 'RULE_TRIGGER'}</span>
+            <span style="color: var(--text-secondary);">${scoreDisplay}${probDisplay}</span>
+        </div>
+    `;
+
+
+    container.insertBefore(div, container.firstChild);
+
+    while (container.children.length > 25) {
+        container.removeChild(container.lastChild);
+    }
+
+    document.getElementById('alerts-buffer-count').textContent = container.children.length;
+}
+
+// Stream Polling Function (Delta updates)
+async function pollStreamDelta() {
+    try {
+        const url = lastPollTimestamp ? `/api/live/stream/?since=${encodeURIComponent(lastPollTimestamp)}` : '/api/live/stream/';
+        const res = await api.request(url);
+        if (res.success && res.data) {
+            const data = res.data;
+            lastPollTimestamp = data.server_timestamp;
+
+            if (data.status) {
+                updateControlsUI(data.status);
+            }
+
+            if (data.events && data.events.length) {
+                data.events.forEach(appendEventRow);
+            }
+
+            if (data.alerts && data.alerts.length) {
+                data.alerts.forEach(appendAlertCard);
+            }
+        }
+    } catch (e) {
+        console.warn('Stream poll error:', e);
+    }
+}
+
+// User Actions
+async function startStream() {
+    const scenario = document.getElementById('scenario-select').value;
+    const rate = parseInt(document.getElementById('rate-select').value);
+
+    try {
+        const res = await api.request('/api/live/start/', {
+            method: 'POST',
+            body: JSON.stringify({ scenario, rate_per_minute: rate, max_events: 150 })
+        });
+        showToast(`Synthetic stream started: ${scenario} (${rate} evt/min)`, 'success');
+        updateControlsUI(res.data);
+    } catch (err) {
+        showToast(err.message || 'Failed to start stream', 'error');
+    }
+}
+
+async function pauseStream() {
+    try {
+        const res = await api.request('/api/live/pause/', { method: 'POST' });
+        showToast('Synthetic stream paused', 'warning');
+        updateControlsUI(res.data);
+    } catch (err) {
+        showToast(err.message || 'Failed to pause stream', 'error');
+    }
+}
+
+async function resumeStream() {
+    try {
+        const res = await api.request('/api/live/resume/', { method: 'POST' });
+        showToast('Synthetic stream resumed', 'success');
+        updateControlsUI(res.data);
+    } catch (err) {
+        showToast(err.message || 'Failed to resume stream', 'error');
+    }
+}
+
+async function stopStream() {
+    try {
+        const res = await api.request('/api/live/stop/', { method: 'POST' });
+        showToast('Synthetic stream stopped', 'info');
+        updateControlsUI(res.data);
+    } catch (err) {
+        showToast(err.message || 'Failed to stop stream', 'error');
+    }
+}
+
+async function executeStep() {
+    const scenario = document.getElementById('scenario-select').value;
+    try {
+        const res = await api.request('/api/live/step/', {
+            method: 'POST',
+            body: JSON.stringify({ scenario })
+        });
+        if (res.success && res.data) {
+            appendEventRow(res.data);
+            showToast(`Generated 1 ${scenario} event: ${res.data.decision_state} (${res.data.total_latency_ms || res.data.latency_ms}ms)`, 'success');
+            pollStreamDelta();
+        }
+    } catch (err) {
+        showToast(err.message || 'Failed to execute step', 'error');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initRiskDonut();
+    pollStreamDelta();
+    // Poll every 1800ms
+    pollTimer = setInterval(pollStreamDelta, 1800);
+});
+
+window.addEventListener('beforeunload', () => {
+    if (pollTimer) clearInterval(pollTimer);
+});
+</script>
+{% endblock %}

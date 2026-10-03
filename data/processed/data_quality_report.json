@@ -1,0 +1,129 @@
+{
+  "shape": {
+    "rows": 10000,
+    "columns": 11
+  },
+  "columns": [
+    "step",
+    "type",
+    "amount",
+    "nameOrig",
+    "oldbalanceOrg",
+    "newbalanceOrig",
+    "nameDest",
+    "oldbalanceDest",
+    "newbalanceDest",
+    "isFraud",
+    "isFlaggedFraud"
+  ],
+  "missing_summary": {
+    "total_missing": 0,
+    "per_column": {
+      "step": 0,
+      "type": 0,
+      "amount": 0,
+      "nameOrig": 0,
+      "oldbalanceOrg": 0,
+      "newbalanceOrig": 0,
+      "nameDest": 0,
+      "oldbalanceDest": 0,
+      "newbalanceDest": 0,
+      "isFraud": 0,
+      "isFlaggedFraud": 0
+    },
+    "per_column_percentage": {
+      "step": 0.0,
+      "type": 0.0,
+      "amount": 0.0,
+      "nameOrig": 0.0,
+      "oldbalanceOrg": 0.0,
+      "newbalanceOrig": 0.0,
+      "nameDest": 0.0,
+      "oldbalanceDest": 0.0,
+      "newbalanceDest": 0.0,
+      "isFraud": 0.0,
+      "isFlaggedFraud": 0.0
+    }
+  },
+  "duplicate_rows": 0,
+  "target_analysis": {
+    "target_name": "isFraud",
+    "mapping": {
+      "0": "Legitimate",
+      "1": "Fraudulent"
+    },
+    "legitimate_count": 9750,
+    "fraud_count": 250,
+    "fraud_percentage": 2.5,
+    "imbalance_ratio": "39.0:1"
+  },
+  "numerical_stats": {
+    "step": {
+      "min": 1.0,
+      "max": 743.0,
+      "mean": 363.78,
+      "std": 215.14,
+      "median": 364.0,
+      "outliers_count": 0,
+      "outliers_pct": 0.0
+    },
+    "amount": {
+      "min": 10.1,
+      "max": 1495919.22,
+      "mean": 45946.38,
+      "std": 137905.84,
+      "median": 10429.79,
+      "outliers_count": 901,
+      "outliers_pct": 9.01
+    },
+    "oldbalanceOrg": {
+      "min": 58.22,
+      "max": 1495919.22,
+      "mean": 60221.4,
+      "std": 138252.5,
+      "median": 24916.12,
+      "outliers_count": 740,
+      "outliers_pct": 7.4
+    },
+    "newbalanceOrig": {
+      "min": 0.0,
+      "max": 594850.84,
+      "mean": 25964.23,
+      "std": 39283.14,
+      "median": 11605.46,
+      "outliers_count": 1009,
+      "outliers_pct": 10.09
+    },
+    "oldbalanceDest": {
+      "min": 0.0,
+      "max": 450138.66,
+      "mean": 30255.72,
+      "std": 49454.88,
+      "median": 7770.77,
+      "outliers_count": 834,
+      "outliers_pct": 8.34
+    },
+    "newbalanceDest": {
+      "min": 0.0,
+      "max": 1535874.34,
+      "mean": 57192.62,
+      "std": 128688.33,
+      "median": 19280.19,
+      "outliers_count": 551,
+      "outliers_pct": 5.51
+    }
+  },
+  "invalid_financial_values": {},
+  "categorical_distributions": {
+    "type": {
+      "PAYMENT": 3960,
+      "CASH_OUT": 3103,
+      "CASH_IN": 1401,
+      "TRANSFER": 1075,
+      "DEBIT": 461
+    }
+  },
+  "leakage_warnings": [
+    "isFlaggedFraud is a heuristic downstream alert rule, not a primary transaction attribute. Must not be used as sole target or direct label indicator."
+  ]
+}

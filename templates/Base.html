@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI-Based Financial Fraud Detection in Real-Time Transactions - FraudSentinel AI{% endblock %}</title>
+    <meta name="description" content="Financial fraud detection system utilizing deep learning, autoencoders, and random forest classification for real-time transaction security.">
+    <meta property="og:title" content="AI-Based Financial Fraud Detection in Real-Time Transactions">
+    <meta property="og:description" content="Financial fraud detection system utilizing deep learning, autoencoders, and random forest classification for real-time transaction security.">
+    <meta property="og:type" content="website">
+
+    <!-- Fonts: Plus Jakarta Sans for crisp display/body & JetBrains Mono for tabular data -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/fintech.css' %}">
+    <script src="{% static 'js/vendor/chart.umd.min.js' %}"></script>
+    <script src="{% static 'js/fintech.js' %}"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <a href="{% url 'home' %}" class="brand-link">
+                    <span class="brand-icon">FS</span>
+                    <span class="brand-title">FraudSentinel AI</span>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Operations</div>
+                <a href="{% url 'home' %}" class="nav-item {% if request.path == '/' %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Overview
+                    </span>
+                </a>
+                <a href="{% url 'live_monitoring' %}" class="nav-item {% if '/live' in request.path %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Live Stream
+                    </span>
+                    <span class="status-dot" style="width: 6px; height: 6px;" title="Synthetic Demo Stream"></span>
+                </a>
+                <a href="{% url 'transactions_list' %}" class="nav-item {% if '/transactions' in request.path %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        Transactions
+                    </span>
+                </a>
+                <a href="{% url 'alerts_list' %}" class="nav-item {% if '/alerts' in request.path %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        Alert Queue
+                    </span>
+                </a>
+                <a href="{% url 'cases_list' %}" class="nav-item {% if '/cases' in request.path %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        Investigations
+                    </span>
+                </a>
+
+                <div class="nav-section-title">Intelligence &amp; Data</div>
+                <a href="{% url 'analytics_hub' %}" class="nav-item {% if '/analytics' in request.path %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        Analytics Hub
+                    </span>
+                </a>
+                <a href="{% url 'models_hub' %}" class="nav-item {% if '/models' in request.path %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                        Model Registry
+                    </span>
+                </a>
+                <a href="{% url 'datasets_hub' %}" class="nav-item {% if '/datasets' in request.path or '/upload' in request.path %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                        Datasets
+                    </span>
+                </a>
+                <a href="{% url 'reports_hub' %}" class="nav-item {% if '/reports' in request.path %}active{% endif %}">
+                    <span class="nav-item-left">
+                        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Reports &amp; Export
+                    </span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                {% if user.is_authenticated %}
+                <div class="user-profile-badge">
+                    <img src="{% static 'images/avatar_analyst.jpg' %}" alt="Analyst Profile" class="avatar-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%231E293B\'/><circle cx=\'16\' cy=\'12\' r=\'6\' fill=\'%2394A3B8\'/><path d=\'M6 28 c0 -6 5 -10 10 -10 s10 4 10 10\' fill=\'%2394A3B8\'/></svg>'">
+                    <div class="user-details">
+                        <span class="user-name">{{ user.username }}</span>
+                        <span class="user-role">{{ user.profile.get_role_display|default:"Risk Analyst" }}</span>
+                    </div>
+                </div>
+                <a href="{% url 'logout' %}" class="btn btn-secondary btn-sm" title="Log out">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </a>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary btn-sm" style="width: 100%;">Log In</a>
+                {% endif %}
+            </div>
+        </aside>
+
+        <!-- Main Viewport -->
+        <div class="app-main">
+            <!-- Topbar Navigation (Top Bar Contract: Breadcrumbs / Status / Search / Action) -->
+            <header class="app-topbar">
+                <div class="topbar-left">
+                    <button id="mobile-sidebar-toggle" class="mobile-toggle" aria-label="Toggle navigation menu">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="topbar-breadcrumbs" aria-label="Breadcrumb">
+                        <a href="{% url 'home' %}" class="breadcrumb-item">FraudSentinel</a>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-item current" aria-current="page">{% block breadcrumb %}Overview{% endblock %}</span>
+                    </nav>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="system-status-indicator" title="Active Model Pipeline RFC v1.0.0 (Operating Threshold &tau;=0.23)">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Inference Engine Active</span>
+                    </div>
+                    <div class="global-search-box">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="global-search-input" placeholder="Search TXN, Account, Alert..." onkeydown="if(event.key==='Enter'){window.location.href='/transactions/?q='+encodeURIComponent(this.value);}">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Flash messages -->
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="flash-alert {% if 'error' in message.tags %}flash-error{% elif 'warning' in message.tags %}flash-warning{% else %}flash-success{% endif %}">
+                    <span>{{ message }}</span>
+                    <button type="button" class="flash-close" onclick="this.parentElement.remove()" aria-label="Dismiss alert">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Main Page Content -->
+            <main class="app-content">
+                {% block content %}{% endblock %}
+                {% block main %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Centralized Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,261 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Case {{ case.case_id }} - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'cases_list' %}" class="breadcrumb-item">Investigations</a>
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-item current">{{ case.case_id }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+            <h1 style="font-family: var(--font-mono);">{{ case.case_id }}</h1>
+            <span class="risk-tag {% if case.priority == 'URGENT' %}critical{% elif case.priority == 'HIGH' %}high{% else %}medium{% endif %}">
+                {{ case.priority }} PRIORITY
+            </span>
+            <span class="status-badge">{{ case.status }}</span>
+            {% if case.resolution != 'UNRESOLVED' %}
+            <span class="risk-tag {% if case.resolution == 'CONFIRMED_FRAUD' %}critical{% else %}low{% endif %}">
+                {{ case.resolution }}
+            </span>
+            {% endif %}
+        </div>
+        <div class="metadata-inline">
+            <span>{{ case.title }}</span>
+            <span class="metadata-separator" aria-hidden="true">&middot;</span>
+            <span>Opened by {{ case.opened_by }}</span>
+            <span class="metadata-separator" aria-hidden="true">&middot;</span>
+            <span>{{ case.opened_at|slice:":16" }}</span>
+        </div>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'cases_list' %}" class="btn btn-secondary">&larr; Back to Cases</a>
+        {% if case.status != 'RESOLVED' and case.status != 'CLOSED' %}
+        <button class="btn btn-primary" onclick="openModal('resolveModal')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Record Formal Resolution
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 3-Column Analyst Workspace Layout -->
+<div style="display: grid; grid-template-columns: 280px 1fr 340px; gap: 20px; align-items: start;">
+    <!-- Left Column: Case Metadata -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <span class="panel-title">Case Metadata</span>
+            </div>
+            <div class="panel-body" style="font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Status</div>
+                    <div style="font-weight: 600; color: var(--text-primary); margin-top: 2px;">{{ case.status }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Assigned Lead</div>
+                    <div style="font-weight: 600; color: var(--text-primary); margin-top: 2px;">{{ case.assigned_analyst|default:"Unassigned" }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Formal Ground Truth</div>
+                    <div style="font-weight: 600; margin-top: 2px; color: {% if case.resolution == 'CONFIRMED_FRAUD' %}var(--risk-critical){% elif case.resolution == 'FALSE_POSITIVE' %}var(--risk-low){% else %}var(--text-secondary){% endif %};">
+                        {{ case.resolution }}
+                    </div>
+                </div>
+                {% if case.closed_at %}
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Resolved At</div>
+                    <div style="color: var(--text-secondary); font-size: 12px; margin-top: 2px;">{{ case.closed_at|slice:":16" }}</div>
+                </div>
+                {% endif %}
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Incident Description</div>
+                    <div style="color: var(--text-secondary); font-size: 12px; margin-top: 4px; line-height: 1.4;">{{ case.description|default:"No description provided." }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if case.resolution_notes %}
+        <div class="panel" style="margin-bottom: 0; border-left: 3px solid var(--accent-teal);">
+            <div class="panel-header">
+                <span class="panel-title">Resolution Notes</span>
+            </div>
+            <div class="panel-body" style="font-size: 12px; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.4;">
+                {{ case.resolution_notes }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Center Column: Linked Transactions & Alerts -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Linked Transactions -->
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <span class="panel-title">Linked Transactions ({{ case.transactions|length }})</span>
+            </div>
+            <div class="panel-body no-padding">
+                {% if case.transactions %}
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Transaction</th>
+                                <th>Type</th>
+                                <th style="text-align: right;">Amount</th>
+                                <th>Decision State</th>
+                                <th>Risk Score</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in case.transactions %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'transaction_detail' tx_id=t.transaction_id %}" style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-teal);">
+                                        {{ t.transaction_id }}
+                                    </a>
+                                </td>
+                                <td><span class="status-badge">{{ t.type }}</span></td>
+                                <td class="tabular-nums" style="text-align: right; font-weight: 600;">${{ t.amount|floatformat:2 }}</td>
+                                <td>
+                                    <span class="risk-tag {% if t.decision_state == 'FRAUD' %}critical{% elif t.decision_state == 'SUSPICIOUS' %}high{% else %}low{% endif %}">
+                                        {{ t.decision_state|default:"UNASSESSED" }}
+                                    </span>
+                                </td>
+                                <td class="tabular-nums font-mono">
+                                    {% if t.risk_score != None %}{{ t.risk_score|floatformat:1 }}/100{% else %}&mdash;{% endif %}
+                                </td>
+                                <td style="text-align: right;">
+                                    <a href="{% url 'transaction_detail' tx_id=t.transaction_id %}" class="btn btn-secondary btn-sm">Inspect</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state" style="padding: 24px;">
+                    <div class="empty-state-title" style="font-size: 13px;">No Linked Transactions</div>
+                    <div class="empty-state-desc" style="font-size: 12px;">No transactions are currently associated with this case file.</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Linked Alerts -->
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <span class="panel-title">Associated Alerts ({{ case.alerts|length }})</span>
+            </div>
+            <div class="panel-body no-padding">
+                {% if case.alerts %}
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Alert</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Rule</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in case.alerts %}
+                            <tr>
+                                <td>
+                                    <span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">{{ a.title }}</span>
+                                </td>
+                                <td><span class="risk-tag {{ a.severity|lower }}">{{ a.severity }}</span></td>
+                                <td><span class="status-badge">{{ a.status }}</span></td>
+                                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">{{ a.rule_name }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state" style="padding: 24px;">
+                    <div class="empty-state-title" style="font-size: 13px;">No Alerts Directly Linked</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Notes Timeline & Actions -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <span class="panel-title">Investigation Timeline ({{ case.notes|length }})</span>
+            </div>
+            <div class="panel-body">
+                <!-- Notes Timeline -->
+                <div style="display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto; padding-right: 4px; margin-bottom: 16px;">
+                    {% for n in case.notes %}
+                    <div style="padding: 10px 12px; border-radius: var(--radius-md); background-color: var(--bg-canvas); border: 1px solid var(--border-subtle);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-weight: 600; font-size: 12px; color: {% if n.is_system_generated %}var(--text-muted){% else %}var(--accent-teal){% endif %};">
+                                {{ n.author }}
+                            </span>
+                            <span class="metadata-inline" style="font-size: 11px;">{{ n.created_at|slice:":16" }}</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">{{ n.note }}</div>
+                    </div>
+                    {% empty %}
+                    <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px;">No notes recorded yet.</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Note Form -->
+                {% if case.status != 'CLOSED' %}
+                <form method="POST" action="{% url 'case_detail' case_id=case.case_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_note">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <textarea name="note" class="form-textarea" rows="2" placeholder="Record investigation note or evidence update..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">Append Investigation Note</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Record Formal Resolution -->
+<div id="resolveModal" class="modal-backdrop">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span class="modal-title">Record Formal Ground-Truth Resolution</span>
+            <button type="button" class="modal-close" onclick="closeModal('resolveModal')">&times;</button>
+        </div>
+        <form method="POST" action="{% url 'case_detail' case_id=case.case_id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="resolve">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Ground-Truth Resolution Category</label>
+                    <select name="resolution" class="form-select" required>
+                        <option value="CONFIRMED_FRAUD">CONFIRMED_FRAUD (Verified Criminal Act / Unauthorized Transfer)</option>
+                        <option value="FALSE_POSITIVE">FALSE_POSITIVE (Verified Legitimate by Customer)</option>
+                        <option value="SUSPICIOUS_ACTIVITY">SUSPICIOUS_ACTIVITY (SAR Filed / Account Monitored)</option>
+                        <option value="NO_ISSUE_FOUND">NO_ISSUE_FOUND (Benign Operational Inconsistency)</option>
+                        <option value="INCONCLUSIVE">INCONCLUSIVE (Insufficient Evidence)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Resolution Justification &amp; Notes</label>
+                    <textarea name="notes" class="form-textarea" rows="3" placeholder="Provide specific operational rationale, verification call logs, or law enforcement filing IDs..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('resolveModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit Formal Disposition</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

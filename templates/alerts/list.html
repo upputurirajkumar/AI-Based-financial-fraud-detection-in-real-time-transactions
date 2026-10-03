@@ -1,0 +1,152 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Alert Review Queue - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}Alert Queue{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        <h1>Fraud Alert Triage &amp; Review Queue</h1>
+        <p>Prioritized operational alert candidates generated from statistical classifiers and deterministic ledger rules.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'cases_list' %}" class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Active Investigations
+        </a>
+    </div>
+</div>
+
+<!-- Filters Panel -->
+<div class="panel" style="margin-bottom: 20px;">
+    <form method="GET" action="{% url 'alerts_list' %}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 140px;">
+            <label class="form-label">Alert Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="NEW" {% if status_filter == 'NEW' %}selected{% endif %}>NEW (Unassigned)</option>
+                <option value="UNDER_REVIEW" {% if status_filter == 'UNDER_REVIEW' %}selected{% endif %}>UNDER_REVIEW</option>
+                <option value="ESCALATED" {% if status_filter == 'ESCALATED' %}selected{% endif %}>ESCALATED</option>
+                <option value="RESOLVED" {% if status_filter == 'RESOLVED' %}selected{% endif %}>RESOLVED</option>
+                <option value="DISMISSED" {% if status_filter == 'DISMISSED' %}selected{% endif %}>DISMISSED</option>
+            </select>
+        </div>
+        <div style="flex: 1; min-width: 140px;">
+            <label class="form-label">Severity Level</label>
+            <select name="severity" class="form-select">
+                <option value="">All Severities</option>
+                <option value="CRITICAL" {% if severity_filter == 'CRITICAL' %}selected{% endif %}>CRITICAL</option>
+                <option value="HIGH" {% if severity_filter == 'HIGH' %}selected{% endif %}>HIGH</option>
+                <option value="MEDIUM" {% if severity_filter == 'MEDIUM' %}selected{% endif %}>MEDIUM</option>
+                <option value="LOW" {% if severity_filter == 'LOW' %}selected{% endif %}>LOW</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-secondary">Apply Filters</button>
+            <a href="{% url 'alerts_list' %}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Alerts Table Panel -->
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">Alert Queue ({{ total_count }} total items)</span>
+        <div class="metadata-inline">
+            <span>Page {{ current_page }} of {{ total_pages|default:1 }}</span>
+        </div>
+    </div>
+    <div class="panel-body no-padding">
+        {% if alerts %}
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Alert ID</th>
+                        <th>Severity</th>
+                        <th>Rule Trigger / Title</th>
+                        <th>Transaction</th>
+                        <th>Risk Score</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in alerts %}
+                    <tr>
+                        <td>
+                            <span style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-teal);">{{ a.alert_id }}</span>
+                        </td>
+                        <td>
+                            <span class="risk-tag {{ a.severity|lower }}">{{ a.severity }}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">{{ a.title }}</div>
+                            <div class="metadata-inline" style="font-size: 11px; margin-top: 2px;">
+                                <span class="font-mono">{{ a.rule_name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if a.transaction_id %}
+                            <a href="{% url 'transaction_detail' tx_id=a.transaction_id %}" style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-teal);">
+                                {{ a.transaction_id }}
+                            </a>
+                            <div class="metadata-inline" style="font-size: 11px; margin-top: 2px;">
+                                <span class="tabular-nums">${{ a.amount|floatformat:2 }}</span>
+                            </div>
+                            {% else %}
+                            <span style="color: var(--text-muted);">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="tabular-nums font-mono" style="font-weight: 600;">
+                            {% if a.risk_score != None %}{{ a.risk_score|floatformat:1 }}/100{% else %}&mdash;{% endif %}
+                        </td>
+                        <td>
+                            <span class="status-badge">{{ a.status }}</span>
+                        </td>
+                        <td class="metadata-inline" style="font-size: 11px;">
+                            {{ a.created_at|slice:":16" }}
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
+                                {% if a.status != 'RESOLVED' and a.status != 'DISMISSED' %}
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="handleInlineAlertTransition('{{ a.alert_id }}', 'UNDER_REVIEW', this)" title="Mark Under Review">Review</button>
+                                <button type="button" class="btn btn-secondary btn-sm" style="color: var(--text-muted);" onclick="handleInlineAlertTransition('{{ a.alert_id }}', 'DISMISSED', this)" title="Dismiss Alert">Dismiss</button>
+                                {% else %}
+                                <span style="font-size: 11px; color: var(--text-muted);">Closed</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-subtle);">
+            <div class="metadata-inline">
+                <span>Page {{ current_page }} of {{ total_pages }}</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                {% if current_page > 1 %}
+                <a href="?page={{ current_page|add:'-1' }}&status={{ status_filter }}&severity={{ severity_filter }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                <a href="?page={{ current_page|add:'1' }}&status={{ status_filter }}&severity={{ severity_filter }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-title">Alert Queue Clear</div>
+            <div class="empty-state-desc">There are currently no alerts matching your filter criteria.</div>
+            <a href="{% url 'transactions_list' %}" class="btn btn-primary btn-sm">View Real-Time Transactions</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

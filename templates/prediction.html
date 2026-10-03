@@ -1,0 +1,167 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Model Evaluation &amp; Inference - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}
+{% if algorithm %}{{ algorithm }}{% elif test %}Inference{% elif upload %}Upload{% else %}Prediction{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        {% if algorithm %}
+        <h1>{{ algorithm }} Performance Analysis</h1>
+        <p>Offline model evaluation metrics and confusion matrix validation.</p>
+        {% elif test %}
+        <h1>Batch Transaction Inference</h1>
+        <p>Upload a transaction batch (CSV) to run offline predictions and risk scoring.</p>
+        {% elif upload %}
+        <h1>Dataset Preprocessing &amp; Ingestion</h1>
+        <p>Upload training or benchmark datasets for schema inspection and feature extraction.</p>
+        {% elif predict %}
+        <h1>Inference Output Stream</h1>
+        <p>Statistical predictions and computed risk metrics for ingested batch.</p>
+        {% else %}
+        <h1>Model Prediction Console</h1>
+        <p>Direct algorithmic evaluation and testing interface.</p>
+        {% endif %}
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'models_hub' %}" class="btn btn-secondary">Model Registry</a>
+        <a href="{% url 'transactions_list' %}" class="btn btn-primary">Transactions Stream</a>
+    </div>
+</div>
+
+{% if algorithm %}
+<!-- Model Performance Metric Card & Confusion Matrix -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+    <div class="panel" style="margin-bottom: 0;">
+        <div class="panel-header">
+            <span class="panel-title">{{ algorithm }} Benchmark Metrics</span>
+            <div class="metadata-inline">
+                <span>Hold-Out Test Evaluation</span>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+                <div style="padding: 14px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Accuracy</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono);">{{ accuracy }}%</div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Overall classification rate</div>
+                </div>
+                <div style="padding: 14px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Precision</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--risk-low); font-family: var(--font-mono);">{{ precision }}%</div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Positive predictive value</div>
+                </div>
+                <div style="padding: 14px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Recall (Sensitivity)</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--risk-low); font-family: var(--font-mono);">{{ recall }}%</div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Fraud detection coverage</div>
+                </div>
+                <div style="padding: 14px; background-color: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">F1-Score</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono);">{{ fscore }}%</div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Harmonic mean</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                {% if algorithm == 'Deep Neural Network' %}
+                <a href="{% url 'rfc' %}" class="btn btn-secondary btn-sm">Switch to Random Forest &rarr;</a>
+                {% else %}
+                <a href="{% url 'dnn' %}" class="btn btn-secondary btn-sm">Switch to Deep Neural Net &rarr;</a>
+                {% endif %}
+                <a href="{% url 'prediction' %}" class="btn btn-secondary btn-sm">Test Batch File</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matrix Image Container -->
+    <div class="panel" style="margin-bottom: 0;">
+        <div class="panel-header">
+            <span class="panel-title">Confusion Matrix &amp; Error Distribution</span>
+        </div>
+        <div class="panel-body" style="display: flex; justify-content: center; align-items: center; background-color: var(--bg-canvas);">
+            {% if image %}
+            <img src="{{ image }}" alt="{{ algorithm }} Confusion Matrix" style="max-width: 100%; height: auto; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-title">Visualization Unavailable</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if predict %}
+<!-- Processed Transactions Table -->
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">{{ subtitle|default:"Batch Inference Telemetry" }}</span>
+        <div class="metadata-inline">
+            <a href="{% url 'prediction' %}" class="btn btn-secondary btn-sm">Upload Another Batch</a>
+        </div>
+    </div>
+    <div class="panel-body no-padding">
+        <div class="data-table-wrapper">
+            {{ predict|safe }}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if test %}
+<!-- Test Upload Form -->
+<div style="max-width: 580px; margin: 20px auto;">
+    <div class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Upload Test Transactions Batch</span>
+        </div>
+        <div class="panel-body">
+            <form action="{% url 'prediction' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="file">Test File (CSV)</label>
+                    <input type="file" id="file" name="file" accept=".csv" class="form-input" required>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                        Upload a transaction CSV (e.g. <code>test.csv</code>) to evaluate risk scores, fraud probabilities, and explainable feature signals.
+                    </p>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <a href="{% url 'transactions_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button class="btn btn-primary" type="submit">Run Batch Prediction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if upload %}
+<!-- Training Upload Form -->
+<div style="max-width: 580px; margin: 20px auto;">
+    <div class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Upload Financial Dataset for Ingestion</span>
+        </div>
+        <div class="panel-body">
+            <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="dataset-file">Dataset File (CSV)</label>
+                    <input type="file" id="dataset-file" name="file" accept=".csv" class="form-input" required>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                        Upload standard PaySim transaction records to extract features and persist into transaction domain.
+                    </p>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <a href="{% url 'datasets_hub' %}" class="btn btn-secondary">View History</a>
+                    <button class="btn btn-primary" type="submit">Upload &amp; Process</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

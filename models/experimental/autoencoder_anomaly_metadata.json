@@ -1,0 +1,10 @@
+{
+  "model_name": "Transaction Anomaly Detector (Autoencoder Surrogate)",
+  "model_version": "1.0.0",
+  "status": "EXPERIMENTAL_REQUIRES_RETRAINING",
+  "framework": "scikit-learn",
+  "artifact_file": "autoencoder_anomaly_v1.joblib",
+  "trained_on": "Legitimate Transactions Only (9,750 samples)",
+  "threshold": 70.0,
+  "description": "Unsupervised isolation reconstruction anomaly score for novel fraud discovery."
+}

@@ -1,0 +1,304 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Executive Overview - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}Overview{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        <h1>Executive Fraud Operations Overview</h1>
+        <p>Real-time machine learning inference, continuous risk profiling, and triage telemetry.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'transactions_list' %}" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Explore Transactions
+        </a>
+        <a href="{% url 'reports_hub' %}" class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Executive Report
+        </a>
+    </div>
+</div>
+
+<!-- Strict Metric Separation KPI Cards Grid -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-label">Total Ingested Volume</div>
+        <div class="kpi-value tabular-nums">{{ overview.transaction_volume.total_transactions|default:"0" }}</div>
+        <div class="kpi-subtext">Monetary Value: ${{ overview.transaction_volume.total_monetary_volume|floatformat:2 }}</div>
+    </div>
+
+    <div class="kpi-card {% if overview.predicted_metrics.predicted_fraud_count > 0 %}critical{% endif %}">
+        <div class="kpi-label">ML Predicted Fraud</div>
+        <div class="kpi-value tabular-nums">{{ overview.predicted_metrics.predicted_fraud_count|default:"0" }}</div>
+        <div class="kpi-subtext">Predicted Rate: {{ overview.predicted_metrics.predicted_fraud_rate_pct|default:"0.0" }}% (Operating &tau;=0.23)</div>
+    </div>
+
+    <div class="kpi-card warning">
+        <div class="kpi-label">High &amp; Critical Risk</div>
+        <div class="kpi-value tabular-nums">{{ risk_dist.counts.HIGH|add:risk_dist.counts.CRITICAL|default:"0" }}</div>
+        <div class="kpi-subtext">Avg System Risk: {{ overview.predicted_metrics.average_risk_score|default:"0.0" }}/100</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-label">Active Alerts in Queue</div>
+        <div class="kpi-value tabular-nums">{{ overview.alert_summary.unresolved_alerts|default:"0" }}</div>
+        <div class="kpi-subtext">{{ overview.alert_summary.critical_alerts|default:"0" }} Critical Severity</div>
+    </div>
+
+    <div class="kpi-card success">
+        <div class="kpi-label">Confirmed Ground Truth</div>
+        <div class="kpi-value tabular-nums">{{ overview.confirmed_ground_truth.confirmed_fraud_cases|default:"0" }}</div>
+        <div class="kpi-subtext">Confirmed Rate: {{ overview.confirmed_ground_truth.confirmed_fraud_rate_pct|default:"0.0" }}% (Human Verified)</div>
+    </div>
+</div>
+
+<!-- Analytics Charts Row: Time Series Trend & Risk Distribution -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+    <!-- Time Series -->
+    <div class="panel" style="margin-bottom: 0;">
+        <div class="panel-header">
+            <span class="panel-title">Transaction &amp; Flagged Activity Velocity (Rolling 7 Days)</span>
+            <div class="metadata-inline">
+                <span>Daily Granularity</span>
+                <span class="metadata-separator" aria-hidden="true">&middot;</span>
+                <span>Active Feed</span>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div style="height: 250px; position: relative;">
+                <canvas id="timeSeriesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Distribution Donut -->
+    <div class="panel" style="margin-bottom: 0;">
+        <div class="panel-header">
+            <span class="panel-title">Portfolio Risk Distribution</span>
+        </div>
+        <div class="panel-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="height: 190px; width: 190px; position: relative;">
+                <canvas id="riskDonutChart"></canvas>
+            </div>
+            <div class="metadata-inline" style="margin-top: 14px; flex-wrap: wrap; justify-content: center; font-size: 11px;">
+                <span style="color: var(--risk-low);">Low: {{ risk_dist.counts.LOW|default:0 }}</span>
+                <span class="metadata-separator" aria-hidden="true">&middot;</span>
+                <span style="color: var(--risk-medium);">Med: {{ risk_dist.counts.MEDIUM|default:0 }}</span>
+                <span class="metadata-separator" aria-hidden="true">&middot;</span>
+                <span style="color: var(--risk-high);">High: {{ risk_dist.counts.HIGH|default:0 }}</span>
+                <span class="metadata-separator" aria-hidden="true">&middot;</span>
+                <span style="color: var(--risk-critical);">Crit: {{ risk_dist.counts.CRITICAL|default:0 }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Operational Split: High Priority Alerts & Recent Transactions -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <!-- Active Alerts -->
+    <div class="panel" style="margin-bottom: 0;">
+        <div class="panel-header">
+            <span class="panel-title">Priority Alert Triage</span>
+            <a href="{% url 'alerts_list' %}" class="btn btn-secondary btn-sm">View All &rarr;</a>
+        </div>
+        <div class="panel-body no-padding">
+            {% if recent_alerts %}
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Alert / Rule</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in recent_alerts %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; font-size: 12px; color: var(--text-primary);">{{ a.title }}</div>
+                                <div class="metadata-inline" style="font-size: 11px; margin-top: 2px;">
+                                    <span>{{ a.created_at|date:"M d, H:i" }}</span>
+                                    <span class="metadata-separator" aria-hidden="true">&middot;</span>
+                                    <span class="tabular-nums font-mono">{{ a.transaction.transaction_id|default:a.alert_id }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="risk-tag {{ a.severity|lower }}">{{ a.severity }}</span>
+                            </td>
+                            <td>
+                                <span class="status-badge">{{ a.status }}</span>
+                            </td>
+                            <td>
+                                {% if a.status != 'RESOLVED' and a.status != 'DISMISSED' %}
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="handleInlineAlertTransition('{{ a.alert_id }}', 'UNDER_REVIEW', this)">Review</button>
+                                {% else %}
+                                <span style="font-size: 11px; color: var(--text-muted);">Closed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-title">No Active Alerts</div>
+                <div class="empty-state-desc">All transactions are operating within standard risk parameters.</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="panel" style="margin-bottom: 0;">
+        <div class="panel-header">
+            <span class="panel-title">Recent Ingested Transactions</span>
+            <a href="{% url 'transactions_list' %}" class="btn btn-secondary btn-sm">Explore &rarr;</a>
+        </div>
+        <div class="panel-body no-padding">
+            {% if recent_transactions %}
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction</th>
+                            <th>Type</th>
+                            <th style="text-align: right;">Amount</th>
+                            <th>Decision State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in recent_transactions %}
+                        {% with latest=t.predictions.first %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'transaction_detail' tx_id=t.transaction_id %}" style="font-weight: 600; font-family: var(--font-mono); color: var(--accent-teal);">
+                                    {{ t.transaction_id }}
+                                </a>
+                                <div class="metadata-inline" style="font-size: 11px; margin-top: 2px;">
+                                    <span>{{ t.name_orig }}</span>
+                                    <span class="metadata-separator" aria-hidden="true">&rarr;</span>
+                                    <span>{{ t.name_dest }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge">{{ t.transaction_type }}</span>
+                            </td>
+                            <td class="tabular-nums" style="text-align: right; font-weight: 600;">
+                                ${{ t.amount|floatformat:2 }}
+                            </td>
+                            <td>
+                                {% if latest %}
+                                <span class="risk-tag {% if latest.decision_state == 'FRAUD' %}critical{% elif latest.decision_state == 'SUSPICIOUS' %}high{% else %}low{% endif %}">
+                                    {{ latest.decision_state }}
+                                </span>
+                                {% else %}
+                                <span class="status-badge">UNASSESSED</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-title">No Transactions Recorded</div>
+                <div class="empty-state-desc">Upload a dataset or evaluate a transaction to view telemetry.</div>
+                <a href="{% url 'transactions_list' %}" class="btn btn-primary btn-sm">Ingest First Transaction</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Fetch Time Series Data
+    try {
+        const timeData = await api.getTimeSeries(7, 'daily');
+        const labels = timeData.data && timeData.data.length ? timeData.data.map(d => d.timestamp ? d.timestamp.split('T')[0] : 'Day') : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const totalTx = timeData.data && timeData.data.length ? timeData.data.map(d => d.total_transactions) : [0, 0, 0, 0, 0, 0, 0];
+        const fraudTx = timeData.data && timeData.data.length ? timeData.data.map(d => d.predicted_fraud) : [0, 0, 0, 0, 0, 0, 0];
+
+        const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Total Volume',
+                        data: totalTx,
+                        borderColor: '#14B8A6',
+                        backgroundColor: 'rgba(20, 184, 166, 0.08)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    },
+                    {
+                        label: 'Predicted Fraud',
+                        data: fraudTx,
+                        borderColor: '#EF4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#94A3B8', font: { size: 12, family: 'Plus Jakarta Sans' } } }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94A3B8', font: { family: 'JetBrains Mono' } } },
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94A3B8', font: { family: 'JetBrains Mono' }, precision: 0 } }
+                }
+            }
+        });
+    } catch (e) {
+        console.warn('Time series chart rendering skipped:', e);
+    }
+
+    // 2. Risk Donut Chart
+    try {
+        const counts = {{ risk_dist.counts|default:"{}"|safe }};
+        const ctxDonut = document.getElementById('riskDonutChart').getContext('2d');
+        new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: {
+                labels: ['Low', 'Medium', 'High', 'Critical'],
+                datasets: [{
+                    data: [counts.LOW || 0, counts.MEDIUM || 0, counts.HIGH || 0, counts.CRITICAL || 0],
+                    backgroundColor: ['#10B981', '#F59E0B', '#F97316', '#EF4444'],
+                    borderWidth: 1,
+                    borderColor: '#0F172A'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                cutout: '74%'
+            }
+        });
+    } catch (e) {
+        console.warn('Donut chart skipped:', e);
+    }
+});
+</script>
+{% endblock %}

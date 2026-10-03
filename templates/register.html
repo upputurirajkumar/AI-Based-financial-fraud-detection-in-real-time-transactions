@@ -1,0 +1,52 @@
+{% extends 'Base.html' %}
+{% load static %}
+{% block title %}Create Account - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}Registration{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: center; min-height: 70vh;">
+    <div class="panel" style="width: 100%; max-width: 580px; padding: 32px 28px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-medium); box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div class="brand-icon" style="margin: 0 auto 12px auto; width: 36px; height: 36px; font-size: 16px;">FS</div>
+            <h1 style="font-size: 20px; font-weight: 600; margin-bottom: 6px;">Create Analyst Account</h1>
+            <p style="font-size: 13px; color: var(--text-secondary);">Enterprise Financial Fraud Operations &amp; Intelligence</p>
+        </div>
+
+        <form action="{% url 'register' %}" method="post">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="form-group">
+                    <label for="name" class="form-label">Full Name</label>
+                    <input type="text" id="name" name="name" class="form-input" placeholder="e.g. Jane Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="mobile" class="form-label">Mobile Number</label>
+                    <input type="tel" id="mobile" name="mobile" class="form-input" placeholder="+1 (555) 019-2831">
+                </div>
+                <div class="form-group">
+                    <label for="email" class="form-label">Corporate Email</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="analyst@institution.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="e.g. jdoe_risk" required>
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Minimum 8 characters" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password" class="form-label">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="cnfm_password" class="form-input" placeholder="Re-enter password" required>
+                </div>
+            </div>
+            <button class="btn btn-primary" type="submit" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 10px;">
+                Register Account
+            </button>
+            <div style="text-align: center; margin-top: 20px; font-size: 12px; color: var(--text-muted);">
+                Already have credentials? <a href="{% url 'login' %}" style="color: var(--accent-teal); text-decoration: underline;">Sign in here</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

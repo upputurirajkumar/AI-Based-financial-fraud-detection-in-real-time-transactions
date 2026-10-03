@@ -1,0 +1,86 @@
+<%- include('partials/header') %>
+<style>
+    .inFormBackground {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
+    label {
+        color: #fff;
+    }
+    .inLoginForm {
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(30, 30, 30, 0.6);
+        max-width: 450px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .inputGroup {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 15px;
+    }
+    .inputGroup label {
+        margin-bottom: 6px;
+        font-weight: bold;
+    }
+    .inputGroup input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #333;
+    }
+    .submitForm {
+        display: block;
+        padding: 10px 25px;
+        background-color: #209D9D;
+        border: none;
+        border-radius: 4px;
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 15px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin: 20px auto 0 auto;
+    }
+    .submitForm:hover {
+        background-color: #1a7e7e;
+    }
+    .helper-text {
+        color: #bbb;
+        font-size: 13px;
+        text-align: center;
+        margin-top: 15px;
+    }
+    .helper-text a {
+        color: #5AD7D7;
+        text-decoration: underline;
+    }
+</style>
+<div class="inFormBackground">
+    <div class="inLoginForm">
+        <form action="/login" method="post">
+            <h2 style="color: white; text-align: center; margin-bottom: 20px; font-size: 22px;">Account Login</h2>
+            <div class="inputGroup">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter Username" required>
+            </div>
+            <div class="inputGroup">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter Password" required>
+            </div>
+            <button class="submitForm" type="submit">Login</button>
+            <div class="helper-text">
+                Don't have an account? <a href="/register">Register here</a>
+                <br>
+                <span style="font-size: 11px; color: #888;">(Demo: admin / admin123 or user / user123)</span>
+            </div>
+        </form>
+    </div>
+</div>
+<%- include('partials/footer') %>

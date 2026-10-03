@@ -1,0 +1,47 @@
+{
+  "model_name": "Baseline Logistic Regression",
+  "model_version": "1.0.0",
+  "status": "EXPERIMENTAL",
+  "artifact_file": "baseline_lr_pipeline_v1.joblib",
+  "decision_threshold": 0.94,
+  "validation_metrics": {
+    "threshold": 0.94,
+    "precision": 0.9714,
+    "recall": 0.8947,
+    "f1_score": 0.9315,
+    "roc_auc": 0.9964,
+    "pr_auc": 0.9479,
+    "brier_score": 0.0336,
+    "confusion_matrix": {
+      "true_positives": 34,
+      "false_positives": 1,
+      "true_negatives": 1461,
+      "false_negatives": 4
+    },
+    "support": {
+      "total": 1500,
+      "fraud_count": 38,
+      "legit_count": 1462
+    }
+  },
+  "test_metrics": {
+    "threshold": 0.94,
+    "precision": 0.9677,
+    "recall": 0.8108,
+    "f1_score": 0.8824,
+    "roc_auc": 0.9863,
+    "pr_auc": 0.8975,
+    "brier_score": 0.0341,
+    "confusion_matrix": {
+      "true_positives": 30,
+      "false_positives": 1,
+      "true_negatives": 1462,
+      "false_negatives": 7
+    },
+    "support": {
+      "total": 1500,
+      "fraud_count": 37,
+      "legit_count": 1463
+    }
+  }
+}

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Detection</title>
+    <link rel="stylesheet" href="/static/css/fraud.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-image: url('https://img.freepik.com/free-vector/dark-wavy-colors-background_23-2148403785.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            padding: 20px;
+            width: 85%;
+            max-width: 1200px;
+            margin: 30px auto 10px auto;
+        }
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        nav li {
+            display: inline-block;
+            margin-right: 15px;
+        }
+        nav a {
+            text-decoration: none;
+            color: white;
+            background-color: rgba(241, 239, 239, 0.384);
+            border-radius: 10px;
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        nav a:hover {
+            background-color: rgba(255, 255, 255, 0.7);
+            color: #111;
+        }
+        section {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        .main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 7px solid black;
+            width: 1000px;
+            min-height: 420px;
+            background-color: rgba(0, 0, 0, 0.35);
+            border-radius: 8px;
+            overflow: auto;
+            position: relative;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .flash-container {
+            width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+        }
+        .flash-message {
+            background: rgba(220, 53, 69, 0.85);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .flash-message.success {
+            background: rgba(40, 167, 69, 0.85);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 style="color: white; margin: 0; font-size: 28px;">Transaction Detection</h1>
+        <nav>
+            <ul>
+                <li><a href="/">HOME</a></li>
+                <% if (user) { %>
+                    <% if (user.is_staff) { %>
+                    <li><a href="/upload">Upload Data</a></li>
+                    <li><a href="/dnn">DNN</a></li>
+                    <li><a href="/rfc">Random Forest</a></li>
+                    <li><a href="/logout">Logout (<%= user.username %>)</a></li>
+                    <% } else { %>
+                    <li><a href="/prediction">Prediction</a></li>
+                    <li><a href="/logout">Logout (<%= user.username %>)</a></li>
+                    <% } %>
+                <% } else { %>
+                <li><a href="/register">Register</a></li>
+                <li><a href="/login">Login</a></li>
+                <% } %>
+            </ul>
+        </nav>
+    </header>
+
+    <% if (messages && messages.length > 0) { %>
+        <div class="flash-container">
+            <% messages.forEach(function(msg) { %>
+                <div class="flash-message <%= msg.type === 'success' ? 'success' : '' %>"><%= msg.text || msg %></div>
+            <% }); %>
+        </div>
+    <% } %>
+
+    <section>
+        <div class="main">

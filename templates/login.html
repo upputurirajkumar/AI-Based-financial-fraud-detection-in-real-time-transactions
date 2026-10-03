@@ -1,0 +1,37 @@
+{% extends 'Base.html' %}
+{% load static %}
+{% block title %}Sign In - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}Authentication{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: center; min-height: 70vh;">
+    <div class="panel" style="width: 100%; max-width: 440px; padding: 32px 28px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-medium); box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div class="brand-icon" style="margin: 0 auto 12px auto; width: 36px; height: 36px; font-size: 16px;">FS</div>
+            <h1 style="font-size: 20px; font-weight: 600; margin-bottom: 6px;">Sign in to FraudSentinel</h1>
+            <p style="font-size: 13px; color: var(--text-secondary);">Enterprise Financial Fraud Operations &amp; Intelligence</p>
+        </div>
+
+        <form action="{% url 'login' %}" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" id="username" name="username" class="form-input" placeholder="Enter analyst username (e.g. admin or user)" autocomplete="username" value="admin" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-input" placeholder="Enter password" autocomplete="current-password" value="admin123" required>
+            </div>
+            <button class="btn btn-primary" type="submit" style="width: 100%; padding: 10px; font-size: 14px;">
+                Authenticate
+            </button>
+            <div style="margin-top: 20px; padding: 10px 14px; background-color: var(--bg-canvas); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 11px; color: var(--text-muted); text-align: center;">
+                <strong>Test Credentials:</strong> <code>admin</code> / <code>admin123</code> (Administrator) &bull; <code>user</code> / <code>user123</code> (Analyst)
+            </div>
+            <div style="text-align: center; margin-top: 16px; font-size: 12px; color: var(--text-muted);">
+                Need new access credentials? <a href="{% url 'register' %}" style="color: var(--accent-teal); text-decoration: underline;">Request registration</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

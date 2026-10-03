@@ -1,0 +1,194 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Investigation Cases - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}Investigations{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        <h1>Fraud Investigation Cases</h1>
+        <p>Formal case management, analyst evidence tracking, and ground-truth confirmation.</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-primary" onclick="openModal('newCaseModal')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Open New Investigation
+        </button>
+    </div>
+</div>
+
+<!-- Filters Panel -->
+<div class="panel" style="margin-bottom: 20px;">
+    <form method="GET" action="{% url 'cases_list' %}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 140px;">
+            <label class="form-label">Case Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="OPEN" {% if status_filter == 'OPEN' %}selected{% endif %}>OPEN</option>
+                <option value="UNDER_REVIEW" {% if status_filter == 'UNDER_REVIEW' %}selected{% endif %}>UNDER_REVIEW</option>
+                <option value="ESCALATED" {% if status_filter == 'ESCALATED' %}selected{% endif %}>ESCALATED</option>
+                <option value="RESOLVED" {% if status_filter == 'RESOLVED' %}selected{% endif %}>RESOLVED</option>
+            </select>
+        </div>
+        <div style="flex: 1; min-width: 140px;">
+            <label class="form-label">Priority</label>
+            <select name="priority" class="form-select">
+                <option value="">All Priorities</option>
+                <option value="URGENT" {% if priority_filter == 'URGENT' %}selected{% endif %}>URGENT</option>
+                <option value="HIGH" {% if priority_filter == 'HIGH' %}selected{% endif %}>HIGH</option>
+                <option value="MEDIUM" {% if priority_filter == 'MEDIUM' %}selected{% endif %}>MEDIUM</option>
+                <option value="LOW" {% if priority_filter == 'LOW' %}selected{% endif %}>LOW</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-secondary">Filter Cases</button>
+            <a href="{% url 'cases_list' %}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Cases Table Panel -->
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">Investigation Cases ({{ total_count }} total entries)</span>
+        <div class="metadata-inline">
+            <span>Page {{ current_page }} of {{ total_pages|default:1 }}</span>
+        </div>
+    </div>
+    <div class="panel-body no-padding">
+        {% if cases %}
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Case ID</th>
+                        <th>Priority</th>
+                        <th>Case Title</th>
+                        <th>Assigned Analyst</th>
+                        <th>Status</th>
+                        <th>Ground Truth Resolution</th>
+                        <th>Artifacts</th>
+                        <th>Opened At</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cases %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'case_detail' case_id=c.case_id %}" style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-teal);">
+                                {{ c.case_id }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="risk-tag {% if c.priority == 'URGENT' %}critical{% elif c.priority == 'HIGH' %}high{% else %}medium{% endif %}">
+                                {{ c.priority }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">{{ c.title }}</div>
+                            <div class="metadata-inline" style="font-size: 11px; margin-top: 2px;">
+                                <span>Opened by {{ c.opened_by }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-size: 12px; color: var(--text-primary);">{{ c.assigned_analyst|default:"Unassigned" }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge">{{ c.status }}</span>
+                        </td>
+                        <td>
+                            {% if c.resolution == 'CONFIRMED_FRAUD' %}
+                            <span class="risk-tag critical">CONFIRMED FRAUD</span>
+                            {% elif c.resolution == 'FALSE_POSITIVE' %}
+                            <span class="risk-tag low">FALSE POSITIVE</span>
+                            {% elif c.resolution == 'UNRESOLVED' %}
+                            <span style="color: var(--text-muted); font-size: 11px;">In Progress</span>
+                            {% else %}
+                            <span class="status-badge">{{ c.resolution }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="metadata-inline" style="font-size: 11px;">
+                            <span>{{ c.transactions_count }} TXNs</span>
+                            <span class="metadata-separator" aria-hidden="true">&middot;</span>
+                            <span>{{ c.alerts_count }} Alerts</span>
+                        </td>
+                        <td class="metadata-inline" style="font-size: 11px;">
+                            {{ c.opened_at|slice:":16" }}
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{% url 'case_detail' case_id=c.case_id %}" class="btn btn-secondary btn-sm">Workspace &rarr;</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-subtle);">
+            <div class="metadata-inline">
+                <span>Page {{ current_page }} of {{ total_pages }}</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                {% if current_page > 1 %}
+                <a href="?page={{ current_page|add:'-1' }}&status={{ status_filter }}&priority={{ priority_filter }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                <a href="?page={{ current_page|add:'1' }}&status={{ status_filter }}&priority={{ priority_filter }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-title">No Investigation Cases</div>
+            <div class="empty-state-desc">There are no cases matching the filter criteria.</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('newCaseModal')">Initiate New Investigation</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal: New Investigation Case -->
+<div id="newCaseModal" class="modal-backdrop">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span class="modal-title">Open Fraud Investigation Case</span>
+            <button type="button" class="modal-close" onclick="closeModal('newCaseModal')">&times;</button>
+        </div>
+        <form method="POST" action="{% url 'cases_list' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_case">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Investigation Title</label>
+                    <input type="text" name="title" class="form-input" placeholder="e.g. Account Takeover & Rapid Cashout Incident" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select name="priority" class="form-select">
+                        <option value="URGENT">Urgent (Immediate Financial Exposure)</option>
+                        <option value="HIGH" selected>High (Significant Value)</option>
+                        <option value="MEDIUM">Medium (Suspicious Velocity)</option>
+                        <option value="LOW">Low (Routine Verification)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Linked Transaction ID (Optional)</label>
+                    <input type="text" name="transaction_id" class="form-input" placeholder="e.g. TXN-...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Initial Incident Description</label>
+                    <textarea name="description" class="form-textarea" rows="3" placeholder="Provide context regarding unusual patterns or account holder alert..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('newCaseModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Open Case</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

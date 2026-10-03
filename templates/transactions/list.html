@@ -1,0 +1,286 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Transactions Explorer - AI-Based Financial Fraud Detection{% endblock %}
+{% block breadcrumb %}Transactions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        <h1>Transaction Intelligence Explorer</h1>
+        <p>Real-time transaction stream, multi-tier risk scoring, and ledger discrepancy audit.</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-secondary" onclick="openModal('batchUploadModal')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Ingest Dataset CSV
+        </button>
+        <button class="btn btn-primary" onclick="openModal('testSingleModal')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Evaluate Live Transaction
+        </button>
+    </div>
+</div>
+
+<!-- Filters Panel -->
+<div class="panel" style="margin-bottom: 20px;">
+    <form method="GET" action="{% url 'transactions_list' %}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 180px;">
+            <label class="form-label">Search Transaction or Account</label>
+            <input type="text" name="q" value="{{ filters.q }}" class="form-input" placeholder="e.g. TXN-..., C12345...">
+        </div>
+        <div style="flex: 1; min-width: 130px;">
+            <label class="form-label">Transaction Type</label>
+            <select name="type" class="form-select">
+                <option value="">All Types</option>
+                <option value="TRANSFER" {% if filters.type == 'TRANSFER' %}selected{% endif %}>TRANSFER</option>
+                <option value="CASH_OUT" {% if filters.type == 'CASH_OUT' %}selected{% endif %}>CASH_OUT</option>
+                <option value="PAYMENT" {% if filters.type == 'PAYMENT' %}selected{% endif %}>PAYMENT</option>
+                <option value="CASH_IN" {% if filters.type == 'CASH_IN' %}selected{% endif %}>CASH_IN</option>
+                <option value="DEBIT" {% if filters.type == 'DEBIT' %}selected{% endif %}>DEBIT</option>
+            </select>
+        </div>
+        <div style="flex: 1; min-width: 120px;">
+            <label class="form-label">Risk Tier</label>
+            <select name="risk_tier" class="form-select">
+                <option value="">All Tiers</option>
+                <option value="CRITICAL" {% if filters.risk_tier == 'CRITICAL' %}selected{% endif %}>CRITICAL</option>
+                <option value="HIGH" {% if filters.risk_tier == 'HIGH' %}selected{% endif %}>HIGH</option>
+                <option value="MEDIUM" {% if filters.risk_tier == 'MEDIUM' %}selected{% endif %}>MEDIUM</option>
+                <option value="LOW" {% if filters.risk_tier == 'LOW' %}selected{% endif %}>LOW</option>
+            </select>
+        </div>
+        <div style="flex: 1; min-width: 110px;">
+            <label class="form-label">Channel</label>
+            <select name="channel" class="form-select">
+                <option value="">All Channels</option>
+                <option value="ONLINE" {% if filters.channel == 'ONLINE' %}selected{% endif %}>Online Banking</option>
+                <option value="MOBILE" {% if filters.channel == 'MOBILE' %}selected{% endif %}>Mobile App</option>
+                <option value="ATM" {% if filters.channel == 'ATM' %}selected{% endif %}>ATM</option>
+                <option value="WIRE" {% if filters.channel == 'WIRE' %}selected{% endif %}>Wire Desk</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a href="{% url 'transactions_list' %}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Transactions Table Panel -->
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">Transactions ({{ total_count }} total entries)</span>
+        <div class="metadata-inline">
+            <span>Page {{ current_page }} of {{ total_pages|default:1 }}</span>
+        </div>
+    </div>
+    <div class="panel-body no-padding">
+        {% if transactions %}
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Type / Channel</th>
+                        <th style="text-align: right;">Amount</th>
+                        <th>Origin Account</th>
+                        <th>Destination Account</th>
+                        <th>Decision State</th>
+                        <th>Risk Score</th>
+                        <th>Alerts</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'transaction_detail' tx_id=t.transaction_id %}" style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-teal);">
+                                {{ t.transaction_id }}
+                            </a>
+                            <div class="metadata-inline" style="font-size: 11px; margin-top: 2px;">
+                                <span>{{ t.created_at|slice:":19" }}</span>
+                                <span class="metadata-separator" aria-hidden="true">&middot;</span>
+                                <span>Step {{ t.step }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-badge">{{ t.transaction_type }}</span>
+                            <span class="metadata-inline" style="font-size: 11px; margin-left: 4px;">{{ t.channel }}</span>
+                        </td>
+                        <td class="tabular-nums" style="text-align: right; font-weight: 600;">
+                            ${{ t.amount|floatformat:2 }}
+                        </td>
+                        <td>
+                            <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">{{ t.name_orig }}</span>
+                            <div class="metadata-inline" style="font-size: 11px; margin-top: 2px;">
+                                <span>${{ t.old_balance_orig|floatformat:0 }}</span>
+                                <span class="metadata-separator" aria-hidden="true">&rarr;</span>
+                                <span>${{ t.new_balance_orig|floatformat:0 }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">{{ t.name_dest }}</span>
+                            <div class="metadata-inline" style="font-size: 11px; margin-top: 2px;">
+                                <span>${{ t.old_balance_dest|floatformat:0 }}</span>
+                                <span class="metadata-separator" aria-hidden="true">&rarr;</span>
+                                <span>${{ t.new_balance_dest|floatformat:0 }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if t.latest_prediction %}
+                            <span class="risk-tag {% if t.latest_prediction.decision_state == 'FRAUD' %}critical{% elif t.latest_prediction.decision_state == 'SUSPICIOUS' %}high{% else %}low{% endif %}">
+                                {{ t.latest_prediction.decision_state }}
+                            </span>
+                            {% else %}
+                            <span class="status-badge">UNASSESSED</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if t.latest_prediction %}
+                            <span class="tabular-nums" style="font-weight: 600;">{{ t.latest_prediction.risk_score|floatformat:1 }}/100</span>
+                            <span class="metadata-inline" style="font-size: 11px; margin-left: 2px;">({{ t.latest_prediction.risk_tier }})</span>
+                            {% else %}
+                            &mdash;
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if t.alert_count > 0 %}
+                            <span class="risk-tag critical">{{ t.alert_count }} Active</span>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 12px;">None</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{% url 'transaction_detail' tx_id=t.transaction_id %}" class="btn btn-secondary btn-sm">Inspect</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if total_pages > 1 %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-subtle);">
+            <div class="metadata-inline">
+                <span>Showing page {{ current_page }} of {{ total_pages }}</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                {% if current_page > 1 %}
+                <a href="?page={{ current_page|add:'-1' }}&q={{ filters.q }}&type={{ filters.type }}&risk_tier={{ filters.risk_tier }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                <a href="?page={{ current_page|add:'1' }}&q={{ filters.q }}&type={{ filters.type }}&risk_tier={{ filters.risk_tier }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-title">No Transactions Matching Criteria</div>
+            <div class="empty-state-desc">Try resetting your search query or evaluate a live transaction.</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('testSingleModal')">Evaluate Live Transaction</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal 1: Test Single Live Transaction -->
+<div id="testSingleModal" class="modal-backdrop">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span class="modal-title">Live Transaction Inference</span>
+            <button type="button" class="modal-close" onclick="closeModal('testSingleModal')">&times;</button>
+        </div>
+        <form id="singleTxForm" method="POST" action="{% url 'transactions_list' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="test_single">
+            <div class="modal-body">
+                <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Quick Preset:</span>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleTransaction('suspicious_transfer')">Drained Transfer (High Risk)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleTransaction('benign_payment')">Retail Payment (Benign)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleTransaction('cash_out_spike')">Cash-Out Spike</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label class="form-label">Ledger Step</label>
+                        <input type="number" name="step" class="form-input tabular-nums" value="1" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Transaction Type</label>
+                        <select name="type" class="form-select" required>
+                            <option value="TRANSFER">TRANSFER (Wire Transfer)</option>
+                            <option value="CASH_OUT">CASH_OUT (Cash Withdrawal)</option>
+                            <option value="PAYMENT">PAYMENT (Merchant Payment)</option>
+                            <option value="CASH_IN">CASH_IN (Deposit)</option>
+                            <option value="DEBIT">DEBIT (Direct Debit)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="form-label">Transaction Amount ($)</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" class="form-input tabular-nums" value="450000.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Origin Account ID</label>
+                        <input type="text" name="nameOrig" class="form-input" value="C8219901" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Destination Account ID</label>
+                        <input type="text" name="nameDest" class="form-input" value="M3920192" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Origin Initial Balance ($)</label>
+                        <input type="number" step="0.01" min="0" name="oldbalanceOrg" class="form-input tabular-nums" value="450000.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Origin Post Balance ($)</label>
+                        <input type="number" step="0.01" min="0" name="newbalanceOrig" class="form-input tabular-nums" value="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Destination Initial Balance ($)</label>
+                        <input type="number" step="0.01" min="0" name="oldbalanceDest" class="form-input tabular-nums" value="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Destination Post Balance ($)</label>
+                        <input type="number" step="0.01" min="0" name="newbalanceDest" class="form-input tabular-nums" value="0.00" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('testSingleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Run ML Inference</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Batch Upload Dataset -->
+<div id="batchUploadModal" class="modal-backdrop">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span class="modal-title">Batch Ingest Transaction Dataset</span>
+            <button type="button" class="modal-close" onclick="closeModal('batchUploadModal')">&times;</button>
+        </div>
+        <form method="POST" action="{% url 'datasets_hub' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Transaction Dataset (CSV)</label>
+                    <input type="file" name="file" accept=".csv" class="form-input" required>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                        Supports standard PaySim formats (step, type, amount, oldbalanceOrg, newbalanceOrig, oldbalanceDest, newbalanceDest).
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('batchUploadModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Upload &amp; Process</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+<%- include('partials/header') %>
+<style>
+    .inFormBackground {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
+    label {
+        color: #fff;
+    }
+    .inLoginForm {
+        padding: 25px 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+        background: rgba(30, 30, 30, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        width: 85%;
+        max-width: 650px;
+        box-sizing: border-box;
+    }
+    .form-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    .inputGroup {
+        display: flex;
+        flex-direction: column;
+    }
+    .inputGroup label {
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: rgb(245, 240, 240);
+        font-size: 13px;
+    }
+    .inputGroup input {
+        padding: 8px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .role-selection {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+        grid-column: span 2;
+    }
+    .role-selection label {
+        cursor: pointer;
+        margin-right: 25px;
+        color: rgb(250, 247, 247);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .submitForm {
+        display: block;
+        padding: 10px 30px;
+        background-color: #209D9D;
+        color: #ffffff;
+        border: none;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 15px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin: 20px auto 0 auto;
+    }
+    .submitForm:hover {
+        background-color: #1a7e7e;
+    }
+    @media (max-width: 600px) {
+        .form-columns {
+            grid-template-columns: 1fr;
+        }
+        .role-selection {
+            grid-column: span 1;
+        }
+    }
+</style>
+<div class="inFormBackground">
+    <div class="inLoginForm">
+        <form action="/register" method="post">
+            <h2 style="color: white; text-align: center; margin-bottom: 20px; font-size: 22px;">Create Account</h2>
+            <div class="form-columns">
+                <div class="inputGroup">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" placeholder="Enter Full Name" required>
+                </div>
+                <div class="inputGroup">
+                    <label for="mobile">Mobile</label>
+                    <input type="tel" id="mobile" name="mobile" placeholder="Enter Mobile Number" required>
+                </div>
+                <div class="inputGroup">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter Email Address" required>
+                </div>
+                <div class="inputGroup">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Choose Username" required>
+                </div>
+                <div class="inputGroup">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter Password" required>
+                </div>
+                <div class="inputGroup">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="cnfm_password" placeholder="Re-enter Password" required>
+                </div>
+                <div class="role-selection">
+                    <span style="color: #ddd; margin-right: 15px; font-size: 14px; font-weight: bold;">Role:</span>
+                    <label>
+                        <input type="radio" name="role" value="admin" id="adminRadio"> Admin
+                    </label>
+                    <label>
+                        <input type="radio" name="role" value="user" id="userRadio" checked> User
+                    </label>
+                </div>
+            </div>
+            <button class="submitForm" type="submit">Register</button>
+            <div style="color: #bbb; font-size: 13px; text-align: center; margin-top: 15px;">
+                Already have an account? <a href="/login" style="color: #5AD7D7; text-decoration: underline;">Login here</a>
+            </div>
+        </form>
+    </div>
+</div>
+<%- include('partials/footer') %>

@@ -1,0 +1,240 @@
+<%- include('partials/header') %>
+<style>
+    .prediction-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .metrics-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        width: 100%;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+    .metrics-table-box {
+        flex: 1;
+        min-width: 320px;
+        max-width: 480px;
+    }
+    .metrics-img-box {
+        flex: 1;
+        min-width: 320px;
+        max-width: 420px;
+        display: flex;
+        justify-content: center;
+    }
+    .metrics-img-box img {
+        max-width: 100%;
+        border-radius: 6px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        background: #fff;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    th, td {
+        padding: 12px 18px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+        font-size: 14px;
+    }
+    th {
+        background-color: #209D9D;
+        color: white;
+        text-transform: uppercase;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+    }
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+    caption {
+        font-size: 1.3em;
+        margin-bottom: 12px;
+        color: #f0f0f0;
+        font-weight: bold;
+        text-align: left;
+    }
+    .prediction-table-wrapper {
+        width: 100%;
+        max-height: 380px;
+        overflow-x: auto;
+        overflow-y: auto;
+        background-color: white;
+        border-radius: 6px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+    .prediction-table-wrapper table {
+        width: 100%;
+        min-width: 800px;
+    }
+    .upload-form-box {
+        width: 90%;
+        max-width: 480px;
+        margin: 20px auto;
+        padding: 25px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        color: #333;
+    }
+    .inputGroup {
+        margin-bottom: 18px;
+    }
+    .inputGroup label {
+        font-size: 15px;
+        font-weight: bold;
+        color: #333;
+        display: block;
+        margin-bottom: 8px;
+    }
+    .inputGroup input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        border: 2px dashed #aaa;
+        border-radius: 6px;
+        cursor: pointer;
+        box-sizing: border-box;
+        background: #fdfdfd;
+    }
+    .submitForm {
+        background-color: #209D9D;
+        color: white;
+        padding: 10px 25px;
+        border: none;
+        border-radius: 5px;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        display: block;
+        margin: 20px auto 0 auto;
+        transition: background-color 0.3s ease;
+    }
+    .submitForm:hover {
+        background-color: #187d7d;
+    }
+    .action-links {
+        margin-top: 15px;
+        display: flex;
+        gap: 15px;
+    }
+    .action-links a {
+        color: #5AD7D7;
+        text-decoration: underline;
+        font-size: 14px;
+    }
+</style>
+
+<div class="prediction-container">
+    <% if (typeof algorithm !== 'undefined' && algorithm) { %>
+    <div class="metrics-wrapper">
+        <div class="metrics-table-box">
+            <table>
+                <caption>CALCULATION METRICS</caption>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Score (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Accuracy</strong></td>
+                        <td><%= accuracy %>%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Precision</strong></td>
+                        <td><%= precision %>%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Recall</strong></td>
+                        <td><%= recall %>%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>F1-Score</strong></td>
+                        <td><%= fscore %>%</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="action-links">
+                <a href="/upload">&larr; Upload new dataset</a>
+                <% if (algorithm === 'Deep Neural Network') { %>
+                <a href="/rfc">View Random Forest Classifier &rarr;</a>
+                <% } else { %>
+                <a href="/dnn">View Deep Neural Network &rarr;</a>
+                <% } %>
+            </div>
+        </div>
+        <div class="metrics-img-box">
+            <img src="<%= image %>" alt="<%= algorithm %> Confusion Matrix">
+        </div>
+    </div>
+    <% } %>
+
+    <% if (typeof predict !== 'undefined' && predict) { %>
+    <div style="width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="color: white; margin: 0; font-size: 18px;">
+                <%= typeof subtitle !== 'undefined' ? subtitle : 'Processed Transactions' %>
+            </h3>
+            <div class="action-links" style="margin: 0;">
+                <% if (user && user.is_staff) { %>
+                <a href="/dnn" style="color: #5AD7D7;">Run DNN &rarr;</a>
+                <a href="/rfc" style="color: #5AD7D7;">Run Random Forest &rarr;</a>
+                <% } else { %>
+                <a href="/prediction" style="color: #5AD7D7;">Upload another test file &rarr;</a>
+                <% } %>
+            </div>
+        </div>
+        <div class="prediction-table-wrapper">
+            <%- predict %>
+        </div>
+    </div>
+    <% } %>
+
+    <% if (typeof test !== 'undefined' && test) { %>
+    <div class="upload-form-box">
+        <h2 style="margin-top: 0; text-align: center; color: #222; font-size: 20px;">Upload Test File for Prediction</h2>
+        <form action="/prediction" method="post" enctype="multipart/form-data">
+            <div class="inputGroup">
+                <label for="file">Test File (CSV)</label>
+                <input type="file" id="file" name="file" accept=".csv" required>
+            </div>
+            <p style="font-size: 12px; color: #666; margin: 5px 0;">
+                Upload a financial transaction CSV file (e.g., test.csv) to detect fraudulent transactions using the trained classifier.
+            </p>
+            <button class="submitForm" type="submit">Predict Fraud</button>
+        </form>
+    </div>
+    <% } %>
+
+    <% if (typeof upload !== 'undefined' && upload) { %>
+    <div class="upload-form-box">
+        <h2 style="margin-top: 0; text-align: center; color: #222; font-size: 20px;">Upload Training Dataset</h2>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <div class="inputGroup">
+                <label for="dataset-file">Dataset File (CSV)</label>
+                <input type="file" id="dataset-file" name="file" accept=".csv" required>
+            </div>
+            <p style="font-size: 12px; color: #666; margin: 5px 0;">
+                Upload a transaction dataset (CSV) to preprocess, scale, and train models.
+            </p>
+            <button class="submitForm" type="submit">Upload &amp; Split</button>
+        </form>
+    </div>
+    <% } %>
+</div>
+<%- include('partials/footer') %>
